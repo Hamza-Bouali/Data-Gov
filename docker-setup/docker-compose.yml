@@ -520,7 +520,10 @@ services:
       # AIRFLOW__LINEAGE__JWT_TOKEN: ...
     entrypoint: /bin/bash
     command:
-      - "/opt/airflow/ingestion_dependency.sh"
+      - -c
+      - |
+        pip install --no-cache-dir -r /requirements.txt || true
+        /opt/airflow/ingestion_dependency.sh
     expose:
       - 8080
     ports:
@@ -532,6 +535,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ingestion-volume-tmp:/tmp
       - ./plugins:/opt/airflow/plugins
+      - ./requirements.txt:/requirements.txt:ro
 
 
 networks:

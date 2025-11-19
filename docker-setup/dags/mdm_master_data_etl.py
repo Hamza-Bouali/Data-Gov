@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from pathlib import Path
 
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
@@ -17,171 +16,187 @@ from mdm_etl import (
     parse_date,
     parse_decimal,
     parse_int,
-    read_csv_records,
     upsert_records,
 )
+from mdm_data_generator import (
+    generate_clients,
+    generate_locations,
+    generate_services,
+    generate_vehicles,
+)
 
-DATA_DIR = Path("/opt/data/raw")
-CONN_URI = "postgresql://airflow:airflow@postgres:5432/mdm"
+DB_USER = "postgres.klqgxqzgxnqzwlxjeevb"
+DB_PASSWORD = "12345"
+DB_HOST = "aws-1-eu-west-1.pooler.supabase.com"
+DB_PORT = "6543"
+DB_NAME = "postgres"
+
+CONN_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 def transform_locations(record: dict[str, object]) -> dict[str, object]:
-    record["location_id"] = normalize_upper(record.get("location_id"))
-    record["location_name"] = normalize_title(record.get("location_name"))
-    record["location_type"] = normalize_upper(record.get("location_type"))
-    record["address_line_1"] = normalize_title(record.get("address_line_1"))
-    record["address_line_2"] = normalize_title(record.get("address_line_2"))
-    record["city"] = normalize_title(record.get("city"))
-    record["state_province"] = normalize_title(record.get("state_province"))
-    record["postal_code"] = normalize_upper(record.get("postal_code"))
-    record["country"] = normalize_upper(record.get("country"))
-    record["latitude"] = parse_decimal(record.get("latitude"))
-    record["longitude"] = parse_decimal(record.get("longitude"))
-    record["is_operational"] = normalize_bool(record.get("is_operational"))
-    record["opening_date"] = parse_date(record.get("opening_date"))
-    record["closing_date"] = parse_date(record.get("closing_date"))
+    record["Location_ID"] = normalize_upper(record.get("Location_ID"))
+    record["Location_Name"] = normalize_title(record.get("Location_Name"))
+    record["Location_Type"] = normalize_upper(record.get("Location_Type"))
+    record["Address_Line_1"] = normalize_title(record.get("Address_Line_1"))
+    record["Address_Line_2"] = normalize_title(record.get("Address_Line_2"))
+    record["City"] = normalize_title(record.get("City"))
+    record["State_Province"] = normalize_title(record.get("State_Province"))
+    record["Postal_Code"] = normalize_upper(record.get("Postal_Code"))
+    record["Country"] = normalize_upper(record.get("Country"))
+    record["Latitude"] = parse_decimal(record.get("Latitude"))
+    record["Longitude"] = parse_decimal(record.get("Longitude"))
+    record["Is_Operational"] = normalize_bool(record.get("Is_Operational"))
+    record["Opening_Date"] = parse_date(record.get("Opening_Date"))
+    record["Closing_Date"] = parse_date(record.get("Closing_Date"))
     return record
 
 
 def transform_clients(record: dict[str, object]) -> dict[str, object]:
-    record["client_id"] = normalize_upper(record.get("client_id"))
-    record["client_name"] = normalize_title(record.get("client_name"))
-    record["client_type"] = normalize_upper(record.get("client_type"))
-    record["legal_registration_number"] = normalize_upper(record.get("legal_registration_number"))
-    record["tax_id"] = normalize_upper(record.get("tax_id"))
-    record["industry_sector"] = normalize_title(record.get("industry_sector"))
-    record["primary_contact_name"] = normalize_title(record.get("primary_contact_name"))
-    record["primary_contact_email"] = normalize_lower(record.get("primary_contact_email"))
-    record["primary_contact_phone"] = normalize_phone(record.get("primary_contact_phone"))
-    record["address_id"] = normalize_upper(record.get("address_id"))
-    record["account_status"] = normalize_upper(record.get("account_status"))
-    record["contract_start_date"] = parse_date(record.get("contract_start_date"))
-    record["contract_end_date"] = parse_date(record.get("contract_end_date"))
+    record["Client_ID"] = normalize_upper(record.get("Client_ID"))
+    record["Client_Name"] = normalize_title(record.get("Client_Name"))
+    record["Client_Type"] = normalize_upper(record.get("Client_Type"))
+    record["Legal_Registration_Number"] = normalize_upper(record.get("Legal_Registration_Number"))
+    record["Tax_ID"] = normalize_upper(record.get("Tax_ID"))
+    record["Industry_Sector"] = normalize_title(record.get("Industry_Sector"))
+    record["Primary_Contact_Name"] = normalize_title(record.get("Primary_Contact_Name"))
+    record["Primary_Contact_Email"] = normalize_lower(record.get("Primary_Contact_Email"))
+    record["Primary_Contact_Phone"] = normalize_phone(record.get("Primary_Contact_Phone"))
+    record["Address_ID"] = normalize_upper(record.get("Address_ID"))
+    record["Account_Status"] = normalize_upper(record.get("Account_Status"))
+    record["Contract_Start_Date"] = parse_date(record.get("Contract_Start_Date"))
+    record["Contract_End_Date"] = parse_date(record.get("Contract_End_Date"))
+    record["Billing_Currency"] = normalize_upper(record.get("Billing_Currency"))
     return record
 
 
 def transform_services(record: dict[str, object]) -> dict[str, object]:
-    record["service_id"] = normalize_upper(record.get("service_id"))
-    record["service_name"] = normalize_title(record.get("service_name"))
-    record["service_type"] = normalize_upper(record.get("service_type"))
-    record["service_category"] = normalize_title(record.get("service_category"))
-    record["mode_of_transport"] = normalize_upper(record.get("mode_of_transport"))
-    record["is_temperature_controlled"] = normalize_bool(record.get("is_temperature_controlled"))
-    record["requires_appointment"] = normalize_bool(record.get("requires_appointment"))
-    record["active_status"] = normalize_upper(record.get("active_status"))
+    record["Service_ID"] = normalize_upper(record.get("Service_ID"))
+    record["Service_Name"] = normalize_title(record.get("Service_Name"))
+    record["Service_Type"] = normalize_upper(record.get("Service_Type"))
+    record["Service_Category"] = normalize_title(record.get("Service_Category"))
+    record["Description"] = record.get("Description")
+    record["Mode_Of_Transport"] = normalize_upper(record.get("Mode_Of_Transport"))
+    record["Is_Temperature_Controlled"] = normalize_bool(record.get("Is_Temperature_Controlled"))
+    record["Requires_Appointment"] = normalize_bool(record.get("Requires_Appointment"))
+    record["Active_Status"] = normalize_upper(record.get("Active_Status"))
     return record
 
 
 def transform_vehicles(record: dict[str, object]) -> dict[str, object]:
-    record["vehicle_id"] = normalize_upper(record.get("vehicle_id"))
-    record["license_plate"] = normalize_upper(record.get("license_plate"))
-    record["vehicle_type"] = normalize_upper(record.get("vehicle_type"))
-    record["brand"] = normalize_title(record.get("brand"))
-    record["model"] = normalize_upper(record.get("model"))
-    record["year"] = parse_int(record.get("year"))
-    record["capacity_weight_tons"] = parse_decimal(record.get("capacity_weight_tons"))
-    record["fuel_type"] = normalize_upper(record.get("fuel_type"))
-    record["status"] = normalize_upper(record.get("status"))
-    record["trajectory_one_id"] = normalize_upper(record.get("trajectory_one_id"))
-    record["trajectory_two_location_id"] = normalize_upper(record.get("trajectory_two_location_id"))
-    record["next_maintenance_due"] = parse_date(record.get("next_maintenance_due"))
+    record["Vehicle_ID"] = normalize_upper(record.get("Vehicle_ID"))
+    record["License_Plate"] = normalize_upper(record.get("License_Plate"))
+    record["Vehicle_Type"] = normalize_upper(record.get("Vehicle_Type"))
+    record["Brand"] = normalize_title(record.get("Brand"))
+    record["Model"] = normalize_upper(record.get("Model"))
+    record["Year"] = parse_int(record.get("Year"))
+    record["Capacity_Weight_Tons"] = parse_decimal(record.get("Capacity_Weight_Tons"))
+    record["Fuel_Type"] = normalize_upper(record.get("Fuel_Type"))
+    record["Status"] = normalize_upper(record.get("Status"))
+    record["Trajectory_one_ID"] = normalize_upper(record.get("Trajectory_one_ID"))
+    record["Trajectory_two_Location_ID"] = normalize_upper(record.get("Trajectory_two_Location_ID"))
+    record["Next_Maintenance_Due"] = parse_date(record.get("Next_Maintenance_Due"))
     return record
 
 
 DOMAINS = {
     "locations": {
-        "csv": DATA_DIR / "locations.csv",
         "config": DomainConfig(
-            table="mdm_locations",
-            key_columns=["location_id"],
+            table="locations_mdm",
+            key_columns=["Location_ID"],
             column_order=[
-                "location_id",
-                "location_name",
-                "location_type",
-                "address_line_1",
-                "address_line_2",
-                "city",
-                "state_province",
-                "postal_code",
-                "country",
-                "latitude",
-                "longitude",
-                "is_operational",
-                "opening_date",
-                "closing_date",
+                "Location_ID",
+                "Location_Name",
+                "Location_Type",
+                "Address_Line_1",
+                "Address_Line_2",
+                "City",
+                "State_Province",
+                "Postal_Code",
+                "Country",
+                "Latitude",
+                "Longitude",
+                "Is_Operational",
+                "Opening_Date",
+                "Closing_Date",
             ],
             transformer=transform_locations,
         ),
+        "generator": lambda: generate_locations(150),
     },
     "clients": {
-        "csv": DATA_DIR / "clients.csv",
         "config": DomainConfig(
-            table="mdm_clients",
-            key_columns=["client_id"],
+            table="clients_mdm",
+            key_columns=["Client_ID"],
             column_order=[
-                "client_id",
-                "client_name",
-                "client_type",
-                "legal_registration_number",
-                "tax_id",
-                "industry_sector",
-                "primary_contact_name",
-                "primary_contact_email",
-                "primary_contact_phone",
-                "address_id",
-                "account_status",
-                "contract_start_date",
-                "contract_end_date",
+                "Client_ID",
+                "Client_Name",
+                "Client_Type",
+                "Legal_Registration_Number",
+                "Tax_ID",
+                "Industry_Sector",
+                "Primary_Contact_Name",
+                "Primary_Contact_Email",
+                "Primary_Contact_Phone",
+                "Address_ID",
+                "Account_Status",
+                "Contract_Start_Date",
+                "Contract_End_Date",
+                "Billing_Currency",
             ],
             transformer=transform_clients,
         ),
+        "generator": lambda max_loc: generate_clients(140, max_loc),
     },
     "services": {
-        "csv": DATA_DIR / "services.csv",
         "config": DomainConfig(
-            table="mdm_services",
-            key_columns=["service_id"],
+            table="services_mdm",
+            key_columns=["Service_ID"],
             column_order=[
-                "service_id",
-                "service_name",
-                "service_type",
-                "service_category",
-                "description",
-                "mode_of_transport",
-                "is_temperature_controlled",
-                "requires_appointment",
-                "active_status",
+                "Service_ID",
+                "Service_Name",
+                "Service_Type",
+                "Service_Category",
+                "Description",
+                "Mode_Of_Transport",
+                "Is_Temperature_Controlled",
+                "Requires_Appointment",
+                "Active_Status",
             ],
             transformer=transform_services,
         ),
+        "generator": lambda: generate_services(120),
     },
     "vehicles": {
-        "csv": DATA_DIR / "vehicles.csv",
         "config": DomainConfig(
-            table="mdm_vehicles",
-            key_columns=["vehicle_id"],
+            table="vehicles_mdm",
+            key_columns=["Vehicle_ID"],
             column_order=[
-                "vehicle_id",
-                "license_plate",
-                "vehicle_type",
-                "brand",
-                "model",
-                "year",
-                "capacity_weight_tons",
-                "fuel_type",
-                "status",
-                "trajectory_one_id",
-                "trajectory_two_location_id",
-                "next_maintenance_due",
+                "Vehicle_ID",
+                "License_Plate",
+                "Vehicle_Type",
+                "Brand",
+                "Model",
+                "Year",
+                "Capacity_Weight_Tons",
+                "Fuel_Type",
+                "Status",
+                "Trajectory_one_ID",
+                "Trajectory_two_Location_ID",
+                "Next_Maintenance_Due",
             ],
             transformer=transform_vehicles,
         ),
+        "generator": lambda max_loc: generate_vehicles(160, max_loc),
     },
 }
 
 
 @task
-def extract_csv(csv_path: str) -> list[dict[str, object]]:
-    return read_csv_records(csv_path)
+def generate_data(domain_key: str, max_location_id: int | None = None) -> list[dict[str, object]]:
+    generator = DOMAINS[domain_key]["generator"]
+    if max_location_id is not None:
+        return generator(max_location_id)
+    return generator()
 
 
 @task
@@ -223,20 +238,40 @@ def mdm_master_data_etl():
     destination = EmptyOperator(task_id="postgres_destination")
     pipelines = {}
 
-    for domain_key, meta in DOMAINS.items():
-        extract = extract_csv.override(task_id=f"extract_{domain_key}")(str(meta["csv"]))
-        transform = transform_domain.override(task_id=f"transform_{domain_key}")(extract, domain_key=domain_key)
-        load = load_domain.override(task_id=f"load_{domain_key}")(transform, domain_key=domain_key)
-        verify = verify_destination.override(task_id=f"verify_{domain_key}")(load, domain_key=domain_key)
-        verify >> destination
-        pipelines[domain_key] = {
-            "extract": extract,
-            "load": load,
-        }
+    locations_generate = generate_data.override(task_id="generate_locations")("locations")
+    locations_transform = transform_domain.override(task_id="transform_locations")(locations_generate, domain_key="locations")
+    locations_load = load_domain.override(task_id="load_locations")(locations_transform, domain_key="locations")
+    locations_verify = verify_destination.override(task_id="verify_locations")(locations_load, domain_key="locations")
+    
+    pipelines["locations"] = {"load": locations_load}
+    locations_verify >> destination
 
-    pipelines["locations"]["load"] >> pipelines["clients"]["extract"]
-    pipelines["locations"]["load"] >> pipelines["services"]["extract"]
-    pipelines["locations"]["load"] >> pipelines["vehicles"]["extract"]
+    clients_generate = generate_data.override(task_id="generate_clients")("clients", max_location_id=150)
+    clients_transform = transform_domain.override(task_id="transform_clients")(clients_generate, domain_key="clients")
+    clients_load = load_domain.override(task_id="load_clients")(clients_transform, domain_key="clients")
+    clients_verify = verify_destination.override(task_id="verify_clients")(clients_load, domain_key="clients")
+    
+    pipelines["clients"] = {"load": clients_load}
+    clients_verify >> destination
+
+    services_generate = generate_data.override(task_id="generate_services")("services")
+    services_transform = transform_domain.override(task_id="transform_services")(services_generate, domain_key="services")
+    services_load = load_domain.override(task_id="load_services")(services_transform, domain_key="services")
+    services_verify = verify_destination.override(task_id="verify_services")(services_load, domain_key="services")
+    
+    pipelines["services"] = {"load": services_load}
+    services_verify >> destination
+
+    vehicles_generate = generate_data.override(task_id="generate_vehicles")("vehicles", max_location_id=150)
+    vehicles_transform = transform_domain.override(task_id="transform_vehicles")(vehicles_generate, domain_key="vehicles")
+    vehicles_load = load_domain.override(task_id="load_vehicles")(vehicles_transform, domain_key="vehicles")
+    vehicles_verify = verify_destination.override(task_id="verify_vehicles")(vehicles_load, domain_key="vehicles")
+    
+    pipelines["vehicles"] = {"load": vehicles_load}
+    vehicles_verify >> destination
+
+    locations_load >> clients_generate
+    locations_load >> vehicles_generate
 
 
 dag = mdm_master_data_etl()
