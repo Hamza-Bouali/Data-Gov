@@ -123,8 +123,10 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-
+# Docker volumes and persistent data
 docker-volume/
+openmetadata-config/
+
 # Environments
 .env
 .venv

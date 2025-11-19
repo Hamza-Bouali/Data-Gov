@@ -485,6 +485,8 @@ services:
         condition: service_completed_successfully
     networks:
       - app_net
+    volumes:
+      - ./openmetadata-config:/openmetadata-data
     healthcheck:
       test: [ "CMD", "wget", "-q", "--spider",  "http://localhost:8586/healthcheck" ]
 
@@ -520,7 +522,7 @@ services:
       # AIRFLOW__LINEAGE__JWT_TOKEN: ...
     entrypoint: /bin/bash
     command:
-      - -c
+      - "-c"
       - |
         pip install --no-cache-dir -r /requirements.txt || true
         /opt/airflow/ingestion_dependency.sh
