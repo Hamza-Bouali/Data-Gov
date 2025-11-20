@@ -18,11 +18,14 @@ git add README.md 2>/dev/null || true
 git add LICENSE 2>/dev/null || true
 git add fix-git.sh 2>/dev/null || true
 git add docker-setup/*.yml 2>/dev/null || true
+git add docker-setup/*.env 2>/dev/null || true
 git add docker-setup/.gitignore 2>/dev/null || true
 git add docker-setup/dags/ 2>/dev/null || true
 git add docker-setup/plugins/ 2>/dev/null || true
 git add docker-setup/data/ 2>/dev/null || true
 git add docker-setup/requirements.txt 2>/dev/null || true
+git add docker-setup/openmetadata-config/README.md 2>/dev/null || true
+git add docker-setup/openmetadata-config/.gitkeep 2>/dev/null || true
 git add database/ 2>/dev/null || true
 git add scripts/ 2>/dev/null || true
 

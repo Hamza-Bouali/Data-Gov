@@ -124,8 +124,9 @@ celerybeat.pid
 *.sage.py
 
 # Docker volumes and persistent data
-docker-volume/
-openmetadata-config/
+openmetadata-config/*
+!openmetadata-config/README.md
+!openmetadata-config/.gitkeep
 
 # Environments
 .env

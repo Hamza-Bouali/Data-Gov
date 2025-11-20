@@ -1,144 +1,124 @@
-# Logistics Master Data Management (MDM) Platform
+# Data Governance Platform with OpenMetadata & Airflow
 
 ## 📋 Project Overview
 
-A comprehensive Master Data Management solution for logistics companies, built on open-source technologies. This platform centralizes and governs core business entities including Clients, Suppliers, Products, Sites, and Vehicles.
+A modern data governance and orchestration platform built on OpenMetadata and Apache Airflow. This solution provides comprehensive metadata management, data cataloging, lineage tracking, and workflow orchestration capabilities for enterprise data operations.
 
-### 🎯 Business Objectives
-- **Single Source of Truth**: Create golden records for all master data domains
-- **Data Quality Assurance**: Implement automated data validation and cleansing
-- **Governance & Compliance**: Establish data ownership, lineage, and policies
-- **Operational Efficiency**: Reduce data duplication and improve data reliability
+### 🎯 Key Capabilities
+- **Metadata Management**: Centralized catalog for all data assets using OpenMetadata
+- **Data Lineage**: Track data flow and transformations across your data ecosystem
+- **Workflow Orchestration**: Automated ETL/ELT pipelines with Apache Airflow
+- **Data Quality**: Built-in data quality checks and monitoring
+- **Search & Discovery**: Full-text search across all metadata
+- **Governance**: Policy management and data classification
 
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
 ```mermaid
 graph TB
-    subgraph "Source Systems"
-        A[ERP]
-        B[CRM]
-        C[Excel Files]
-        D[Legacy Apps]
+    subgraph "Orchestration Layer"
+        A[Apache Airflow]
+        A1[DAG Scheduler]
+        A2[Task Executor]
     end
     
-    subgraph "Data Integration Layer"
-        E[Talend Open Studio]
-        E1[MDM Clients]
-        E2[MDM Fournisseurs]
-        E3[MDM Produits]
-        E4[MDM Sites]
-        E5[MDM Véhicules]
+    subgraph "Metadata Layer"
+        B[OpenMetadata Server]
+        B1[Metadata API]
+        B2[Ingestion Framework]
+        B3[UI Dashboard]
     end
     
-    subgraph "MDM Hub & Storage"
-        F[PostgreSQL]
-        F1[Clients Master]
-        F2[Fournisseurs Master]
-        F3[Produits Master]
-        F4[Sites Master]
-        F5[Véhicules Master]
+    subgraph "Storage Layer"
+        C[MySQL Database]
+        C1[OpenMetadata DB]
+        C2[Airflow DB]
     end
     
-    subgraph "Data Governance"
-        G[OpenMetadata]
-        G1[Business Glossary]
-        G2[Data Lineage]
-        G3[Data Quality]
+    subgraph "Search Layer"
+        D[Elasticsearch]
+        D1[Metadata Index]
+        D2[Full-Text Search]
     end
     
-    subgraph "Consumption"
-        H[Business Apps]
-        I[Analytics]
-        J[Data Stewards]
+    subgraph "Data Sources"
+        E[PostgreSQL]
+        F[Supabase]
+        G[CSV Files]
+        H[APIs]
     end
     
-    A --> E
-    B --> E
-    C --> E
-    D --> E
-    
-    E --> E1
-    E --> E2
-    E --> E3
-    E --> E4
-    E --> E5
-    
-    E1 --> F1
-    E2 --> F2
-    E3 --> F3
-    E4 --> F4
-    E5 --> F5
-    
-    F --> G
-    G --> J
-    F --> H
-    F --> I
+    A --> B
+    B --> C
+    B --> D
+    A --> C
+    B2 --> E
+    B2 --> F
+    B2 --> G
+    B2 --> H
 ```
 
 ### Technology Stack
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **Data Integration** | Talend Open Studio | ETL, Data Quality, Master Data Processing |
-| **Data Storage** | PostgreSQL | MDM Hub, Metadata Storage |
-| **Data Governance** | OpenMetadata | Data Catalog, Lineage, Business Glossary |
-| **Orchestration** | Bash Scripts + Cron | Job Scheduling & Automation |
-| **Monitoring** | PostgreSQL Views | Data Quality Dashboards |
-
-## 🚀 Quick Start
+| Component | Technology | Version | Purpose |
+|-----------|------------|---------|---------|  
+| **Metadata Catalog** | OpenMetadata | 1.10.5 | Data cataloging, lineage, governance |
+| **Workflow Engine** | Apache Airflow | 2.x | ETL/ELT orchestration |
+| **Metadata Storage** | MySQL | 8.x | Persistent metadata storage |
+| **Search Engine** | Elasticsearch | 8.11.4 | Full-text metadata search |
+| **Containerization** | Docker Compose | 3.9 | Service orchestration |
+| **Python Libraries** | pandas, psycopg2, faker | Latest | Data processing |## 🚀 Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose
-- Java JDK 8 or 11 (for Talend)
+- Docker and Docker Compose (v20.10+)
 - 8GB RAM minimum
-- 50GB free disk space
+- 20GB free disk space
+- Git
 
 ### Installation Steps
 
-#### 1. Clone and Setup
+#### 1. Clone Repository
 ```bash
-# Create project directory
-mkdir logistics-mdm && cd logistics-mdm
-
-# Clone configuration files
-git clone <repository-url>
-cd docker-setup
+git clone https://github.com/Hamza-Bouali/Data-Gov.git
+cd Data-Gov/docker-setup
 ```
 
-#### 2. Start Core Services
+#### 2. Start All Services
 ```bash
-# Start all services
-docker-compose up -d
+# Start the complete stack
+docker compose up -d
 
-# Verify services are running
-docker-compose ps
+# Verify all services are healthy
+docker compose ps
 ```
 
-#### 3. Initialize OpenMetadata
+#### 3. Wait for Services to Initialize
 ```bash
-# Initialize the metadata database
-curl -X POST http://localhost:8585/api/v1/system/init
+# Check service logs
+docker compose logs -f openmetadata-server
 
-# Wait for services to be ready (2-3 minutes)
-sleep 180
+# Services typically take 2-3 minutes to fully start
 ```
 
-#### 4. Configure Data Ingestion
-```bash
-# Ingest PostgreSQL metadata into OpenMetadata
-python scripts/ingest_postgresql_metadata.py
-```
-
-#### 5. Deploy Talend Jobs
-```bash
-# Import and build Talend jobs
-./scripts/deploy_talend_jobs.sh
-```
-
-### Access Points
+#### 4. Access the Platform
 - **OpenMetadata UI**: http://localhost:8585
-- **PostgreSQL Database**: localhost:5432
-- **Database Credentials**: See `docker-compose.yml`
+  - Default credentials: `admin` / `admin`
+- **Airflow UI**: http://localhost:8080
+  - Default credentials: `admin` / `admin`  
+- **Elasticsearch**: http://localhost:9200
+- **MySQL**: `localhost:3306`
+
+### Quick Validation
+```bash
+# Check OpenMetadata health
+curl http://localhost:8585/api/v1/health
+
+# Check Airflow health  
+curl http://localhost:8080/health
+
+# View running services
+docker compose ps
+```
 
 ## 📊 Master Data Domains
 
@@ -185,49 +165,87 @@ CREATE TABLE mdm_clients (
 
 ## 🔧 Configuration
 
-### Talend Job Configuration
-
-#### 1. Database Connections
-Configure in Talend `tPostgreSQLConnection` components:
-- **Host**: `localhost`
-- **Port**: `5432`
-- **Database**: `mdm_hub`
-- **Username**: `mdm_user`
-- **Password**: `mdm_password`
-
-#### 2. Data Quality Rules
-Each MDM job includes:
-- **Format Validation** (email, phone, SIRET)
-- **Completeness Checks** (required fields)
-- **Uniqueness Validation** (business keys)
-- **Cross-reference Checks** (valid foreign keys)
-
-### OpenMetadata Setup
-
-#### 1. Business Glossary
-Create terms in OpenMetadata UI:
-- **Client Fidèle**: Client with >10 orders/year
-- **Produit Actif**: Product with regular stock movements
-- **Fournisseur Certifié**: Validated and approved supplier
-
-#### 2. Data Classification
-- **PII**: `email`, `telephone`, `adresse`
-- **Business Critical**: `client_code`, `siret`, `sku`
-- **Reference Data**: `segment_client`, `categorie_produit`
-
-### Scheduling Configuration
-
-#### Cron Jobs
-```bash
-# Daily MDM processing at 2 AM
-0 2 * * * /opt/logistics-mdm/scripts/run_mdm_pipeline.sh
-
-# Weekly data quality assessment (Sunday at 3 AM)
-0 3 * * 0 /opt/logistics-mdm/scripts/run_dq_assessment.sh
-
-# Monthly governance reporting (1st of month at 4 AM)
-0 4 1 * * /opt/logistics-mdm/scripts/generate_governance_reports.sh
+### Directory Structure
 ```
+Data-Gov/
+├── docker-setup/
+│   ├── docker-compose.yml          # Main service configuration
+│   ├── openmetadata.env            # OpenMetadata environment variables
+│   ├── requirements.txt            # Python dependencies for Airflow
+│   ├── dags/                       # Airflow DAGs directory
+│   │   ├── mdm_master_data_etl.py  # Master data ETL pipeline
+│   │   ├── example_dag.py          # Example DAG
+│   │   └── [OpenMetadata DAGs]     # Auto-generated ingestion DAGs
+│   ├── plugins/                    # Airflow plugins (custom operators)
+│   ├── openmetadata-config/        # OpenMetadata configuration backup
+│   │   ├── README.md               # Configuration documentation
+│   │   └── .gitkeep                # Track directory in git
+│   └── docker-volume/              # Persistent data (excluded from git)
+│       └── db-data/                # MySQL data files
+├── database/                       # Database initialization scripts
+│   └── init-scripts/
+│       ├── 01-mdm-schema.sql       # Schema definitions
+│       └── 02-sample-data.sql      # Sample data
+├── scripts/                        # Utility scripts
+│   ├── start-environment.sh       # Start all services
+│   └── stop-environment.sh        # Stop all services  
+├── .gitignore                      # Git ignore rules
+├── README.md                       # This file
+└── LICENSE                         # License information
+```
+
+### OpenMetadata Configuration
+
+All OpenMetadata settings are stored in `docker-setup/openmetadata.env`:
+
+```env
+# Cluster Configuration
+OPENMETADATA_CLUSTER_NAME=openmetadata
+SERVER_PORT=8585
+SERVER_ADMIN_PORT=8586
+
+# Database Configuration  
+DB_USER=openmetadata_user
+DB_USER_PASSWORD=openmetadata_password
+DB_HOST=mysql
+DB_PORT=3306
+
+# Authentication (default: basic auth)
+AUTHENTICATION_PROVIDER=basic
+AUTHENTICATION_ENABLE_SELF_SIGNUP=true
+```
+
+See `docker-setup/openmetadata.env` for complete configuration.
+
+### Airflow Configuration
+
+Airflow is configured via environment variables in `docker-compose.yml`:
+
+```yaml
+environment:
+  AIRFLOW__CORE__EXECUTOR: LocalExecutor
+  AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth"
+  DB_HOST: mysql
+  AIRFLOW_DB: airflow_db
+```
+
+**Adding Python Dependencies:**
+
+Edit `docker-setup/requirements.txt` and restart the ingestion service:
+```bash
+# Add your package to requirements.txt
+echo "your-package==version" >> requirements.txt
+
+# Restart to install new packages
+docker compose restart ingestion
+```
+
+### Network Configuration
+
+All services run on a custom bridge network:
+- Network: `app_net`
+- Subnet: `172.16.240.0/24`
+- Services communicate via internal DNS names
 
 ## 📈 Data Quality Framework
 
