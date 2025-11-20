@@ -483,6 +483,7 @@ services:
         condition: service_healthy
       execute-migrate-all:
         condition: service_completed_successfully
+    
     networks:
       - app_net
     
