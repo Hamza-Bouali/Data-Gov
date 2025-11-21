@@ -1,433 +1,434 @@
 # Logistics Master Data Management (MDM) Platform
 
+A comprehensive Master Data Management solution for logistics companies, built on open-source technologies. This platform centralizes and governs core business entities including Locations, Clients, Services, and Vehicles using PostgreSQL, OpenMetadata, and Apache Airflow.
+
 ## 📋 Project Overview
 
-A comprehensive Master Data Management solution for logistics companies, built on open-source technologies. This platform centralizes and governs core business entities including Clients, Suppliers, Products, Sites, and Vehicles.
-
-### 🎯 Business Objectives
-- **Single Source of Truth**: Create golden records for all master data domains
-- **Data Quality Assurance**: Implement automated data validation and cleansing
-- **Governance & Compliance**: Establish data ownership, lineage, and policies
-- **Operational Efficiency**: Reduce data duplication and improve data reliability
+### 🎯 Core Objectives
+- **Centralized Master Data Hub**: Single source of truth for all logistics entities
+- **Data Quality Assurance**: Automated validation and normalization of master data
+- **Data Governance & Lineage**: Track data ownership, transformations, and dependencies
+- **Automated Data Pipelines**: Daily ETL workflows using Apache Airflow
+- **Interactive Metadata Catalog**: Browse and understand all data assets via OpenMetadata
 
 ## 🏗️ System Architecture
 
-### High-Level Architecture
-```mermaid
-graph TB
-    subgraph "Source Systems"
-        A[ERP]
-        B[CRM]
-        C[Excel Files]
-        D[Legacy Apps]
-    end
-    
-    subgraph "Data Integration Layer"
-        E[Talend Open Studio]
-        E1[MDM Clients]
-        E2[MDM Fournisseurs]
-        E3[MDM Produits]
-        E4[MDM Sites]
-        E5[MDM Véhicules]
-    end
-    
-    subgraph "MDM Hub & Storage"
-        F[PostgreSQL]
-        F1[Clients Master]
-        F2[Fournisseurs Master]
-        F3[Produits Master]
-        F4[Sites Master]
-        F5[Véhicules Master]
-    end
-    
-    subgraph "Data Governance"
-        G[OpenMetadata]
-        G1[Business Glossary]
-        G2[Data Lineage]
-        G3[Data Quality]
-    end
-    
-    subgraph "Consumption"
-        H[Business Apps]
-        I[Analytics]
-        J[Data Stewards]
-    end
-    
-    A --> E
-    B --> E
-    C --> E
-    D --> E
-    
-    E --> E1
-    E --> E2
-    E --> E3
-    E --> E4
-    E --> E5
-    
-    E1 --> F1
-    E2 --> F2
-    E3 --> F3
-    E4 --> F4
-    E5 --> F5
-    
-    F --> G
-    G --> J
-    F --> H
-    F --> I
 ```
-
-### Technology Stack
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **Data Integration** | Talend Open Studio | ETL, Data Quality, Master Data Processing |
-| **Data Storage** | PostgreSQL | MDM Hub, Metadata Storage |
-| **Data Governance** | OpenMetadata | Data Catalog, Lineage, Business Glossary |
-| **Orchestration** | Bash Scripts + Cron | Job Scheduling & Automation |
-| **Monitoring** | PostgreSQL Views | Data Quality Dashboards |
+┌─────────────────────────────────────────────────────────────┐
+│                     Data Sources                             │
+│        (Faker-generated test data for demo)                 │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────────────────┐
+│              Apache Airflow DAGs                             │
+│     (Data generation, transformation, loading)               │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────────────────┐
+│            PostgreSQL MDM Hub                                │
+│  ┌──────────────┬──────────────┬──────────────┐             │
+│  │  Locations   │   Clients    │  Services    │   Vehicles  │
+│  │   (MDM)      │    (MDM)     │   (MDM)      │    (MDM)    │
+│  └──────────────┴──────────────┴──────────────┘             │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────────────────┐
+│          OpenMetadata Catalog                                │
+│   (Data lineage, glossary, classification)                  │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose
-- Java JDK 8 or 11 (for Talend)
-- 8GB RAM minimum
-- 50GB free disk space
+- **Docker & Docker Compose** (v20.10+)
+- **8GB RAM** minimum
+- **20GB free disk space**
+- **Bash shell** (for helper scripts)
 
-### Installation Steps
+### Installation & Startup
 
-#### 1. Clone and Setup
+#### 1. Clone the Repository
 ```bash
-# Create project directory
-mkdir logistics-mdm && cd logistics-mdm
-
-# Clone configuration files
 git clone <repository-url>
-cd docker-setup
+cd logistics-mdm
 ```
 
-#### 2. Start Core Services
+#### 2. Configure Environment Variables
 ```bash
-# Start all services
-docker-compose up -d
+# Copy the template to create your .env file
+cp .env.template .env
 
-# Verify services are running
+# Edit with your configuration
+nano .env
+```
+
+See [Configuration](#-configuration--customization) section below for details on each variable.
+
+#### 3. Start All Services
+```bash
+# Make scripts executable
+chmod +x scripts/*.sh
+
+# Start the platform
+./scripts/start-environment.sh
+```
+
+This will start:
+- **PostgreSQL** on port 5432 (MDM database)
+- **OpenMetadata** on port 8585 (Data catalog UI)
+- **Airflow** on port 8080 (Orchestration & DAG execution)
+- **Elasticsearch** on port 9200 (Search backend)
+- **MySQL** on port 3306 (OpenMetadata metadata store)
+
+#### 3. Access the Services
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| **OpenMetadata UI** | http://localhost:8585 | admin@open-metadata.org / admin |
+| **Airflow UI** | http://localhost:8080 | admin / admin |
+| **PostgreSQL** | localhost:5432 | mdm_user / mdm_password |
+
+#### 4. Verify Installation
+```bash
+# Check all services are running
 docker-compose ps
+
+# View service logs
+docker-compose logs -f openmetadata-server
 ```
 
-#### 3. Initialize OpenMetadata
+### Stopping Services
 ```bash
-# Initialize the metadata database
-curl -X POST http://localhost:8585/api/v1/system/init
-
-# Wait for services to be ready (2-3 minutes)
-sleep 180
+./scripts/stop-environment.sh
 ```
-
-#### 4. Configure Data Ingestion
-```bash
-# Ingest PostgreSQL metadata into OpenMetadata
-python scripts/ingest_postgresql_metadata.py
-```
-
-#### 5. Deploy Talend Jobs
-```bash
-# Import and build Talend jobs
-./scripts/deploy_talend_jobs.sh
-```
-
-### Access Points
-- **OpenMetadata UI**: http://localhost:8585
-- **PostgreSQL Database**: localhost:5432
-- **Database Credentials**: See `docker-compose.yml`
 
 ## 📊 Master Data Domains
 
-### Core Data Entities
+The platform manages four core master data domains:
 
-| Domain | French Label | Key Attributes | Owner |
-|--------|--------------|----------------|-------|
-| **Clients** | Clients | client_code, raison_sociale, siret, adresse | Sales Director |
-| **Suppliers** | Fournisseurs | supplier_code, nom, categorie, conditions_paiement | Procurement Manager |
-| **Products** | Produits/Articles | sku, description, poids, dimensions, prix | Product Manager |
-| **Sites** | Sites/Entrepôts | site_code, adresse, capacite, type | Operations Manager |
-| **Vehicles** | Véhicules/Chauffeurs | immatriculation, capacite, type, chauffeur | Fleet Manager |
+### 1. **Locations** 🏢
+Warehouses, depots, hubs, and distribution centers across global markets.
 
-### Database Schema
+| Field | Type | Description |
+|-------|------|-------------|
+| Location_ID | String | Unique identifier (e.g., LOC-001) |
+| Location_Name | String | Facility name |
+| Location_Type | String | Warehouse, Depot, Hub, Office, etc. |
+| City, State, Country | String | Geographic location |
+| Is_Operational | Boolean | Current operational status |
+
+**Example Records**: 150 locations across 10+ countries
+
+### 2. **Clients** 👥
+Shippers, consignees, suppliers, and partner organizations.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| Client_ID | String | Unique identifier (e.g., CL-001) |
+| Client_Name | String | Company name |
+| Client_Type | String | Shipper, Consignee, Supplier, Partner |
+| Industry_Sector | String | Automotive, Retail, Food, etc. |
+| Account_Status | String | Active, Inactive, Suspended |
+| Billing_Currency | String | USD, EUR, GBP, MAD, etc. |
+
+**Example Records**: 140 clients linked to locations
+
+### 3. **Services** 🚚
+Logistics services offered: transport modes, warehousing, value-added services.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| Service_ID | String | Unique identifier (e.g., SRV-001) |
+| Service_Type | String | Transport, Warehousing, Value-Added |
+| Service_Category | String | Long Haul, Distribution, Cold Chain |
+| Mode_Of_Transport | String | Road, Air, Sea, Rail |
+| Is_Temperature_Controlled | Boolean | Climate control requirement |
+
+**Example Records**: 120 service configurations
+
+### 4. **Vehicles** 🚛
+Fleet assets: trucks, vans, trailers with operational details.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| Vehicle_ID | String | Unique identifier (e.g., VH-001) |
+| License_Plate | String | Vehicle registration |
+| Vehicle_Type | String | Truck, Van, Trailer |
+| Brand & Model | String | Volvo, Mercedes, Scania, MAN |
+| Capacity_Weight_Tons | Integer | Cargo capacity |
+| Fuel_Type | String | Diesel, Electric, Hybrid |
+| Status | String | Active, Maintenance, Retired |
+
+**Example Records**: 160 vehicles with maintenance schedules
+
+## 🔧 Project Structure
+
+```
+logistics-mdm/
+├── docker-setup/                    # Docker Compose configuration
+│   ├── docker-compose.yml          # Main orchestration file
+│   ├── dags/                        # Airflow DAG definitions
+│   │   ├── mdm_master_data_etl.py  # Main ETL pipeline
+│   │   ├── example_dag.py           # Example DAG template
+│   │   └── *-generated-*.py         # Auto-generated ingestion DAGs
+│   ├── plugins/                     # Airflow plugins & utilities
+│   │   ├── mdm_etl.py              # ETL helper functions
+│   │   ├── mdm_data_generator.py   # Test data generation
+│   │   └── __init__.py
+│   ├── requirements.txt             # Python dependencies
+│   ├── .gitignore                   # Git exclusions
+│   └── docker-volume/               # Persistent volumes (not tracked)
+│
+├── database/
+│   └── init-scripts/
+│       ├── 01-mdm-schema.sql       # Database schema definition
+│       └── 02-sample-data.sql      # Sample data insertion
+│
+├── scripts/
+│   ├── start-environment.sh         # Start all services
+│   └── stop-environment.sh          # Stop all services
+│
+├── .gitignore                       # Root-level git exclusions
+├── LICENSE                          # Apache 2.0 License
+├── README.md                        # This file
+└── fix-git.sh                       # Utility to fix git tracking
+```
+
+## 🔄 ETL Pipeline Overview
+
+### Main DAG: `mdm_master_data_etl`
+
+The primary Airflow DAG orchestrates daily master data processing:
+
+```
+1. GENERATE
+   ├── generate_locations (150 records)
+   ├── generate_clients (140 records)
+   ├── generate_services (120 records)
+   └── generate_vehicles (160 records)
+         ↓
+2. TRANSFORM
+   ├── Normalize text fields (UPPER, TITLE, LOWER)
+   ├── Validate formats (dates, decimals, booleans)
+   ├── Clean phone numbers & postal codes
+   └── Apply business rules
+         ↓
+3. LOAD
+   ├── Upsert to PostgreSQL tables
+   └── Handle duplicates via primary keys
+         ↓
+4. VERIFY
+   └── Count records & validate data integrity
+```
+
+### Execution Schedule
+- **Daily at 2:00 AM** (configurable via Airflow UI)
+- **Incremental loads** with upsert logic
+- **Dependency chains**: Locations load first → Clients & Vehicles depend on Locations
+
+### Key Functions (in `plugins/mdm_etl.py`)
+
+| Function | Purpose |
+|----------|---------|
+| `normalize_upper()` | Convert text to uppercase |
+| `normalize_title()` | Convert text to title case |
+| `normalize_phone()` | Extract digits from phone numbers |
+| `parse_date()` | Parse date strings (YYYY-MM-DD) |
+| `parse_decimal()` | Convert to decimal numbers |
+| `parse_int()` | Convert to integers |
+| `upsert_records()` | Insert/update with conflict handling |
+
+## 🔍 OpenMetadata Integration
+
+OpenMetadata provides a unified data catalog with:
+
+### Features
+- **Table Discovery**: Browse all MDM tables and columns
+- **Data Lineage**: Visualize ETL transformations
+- **Business Glossary**: Define domain terms (e.g., "Active Client")
+- **Data Classification**: Tag PII, business-critical fields
+- **Asset Ownership**: Assign stewards to domains
+- **Search & Browse**: Full-text search across catalog
+
+### Accessing the Catalog
+1. Navigate to **http://localhost:8585**
+2. Explore **Data Entities** → **PostgreSQL** → **mdm_hub**
+3. View table schemas, sample data, and lineage
+4. Add descriptions, tags, and ownership information
+
+## 📈 Database Schema
+
+All MDM tables reside in the `mdm` schema with standardized columns:
+
+### Common Columns (All Tables)
 ```sql
--- Example: Clients Master Table
-CREATE TABLE mdm_clients (
-    golden_id SERIAL PRIMARY KEY,
-    client_code VARCHAR(50) UNIQUE NOT NULL,
-    raison_sociale VARCHAR(255) NOT NULL,
-    siret VARCHAR(14),
-    adresse TEXT,
-    ville VARCHAR(100),
-    code_postal VARCHAR(10),
-    pays VARCHAR(100) DEFAULT 'France',
-    contact_principal VARCHAR(100),
-    email VARCHAR(150),
-    telephone VARCHAR(20),
-    segment_client VARCHAR(50),
-    statut VARCHAR(20) DEFAULT 'actif',
-    
-    -- Data Quality Metrics
-    dq_score INTEGER DEFAULT 100,
-    dq_issues JSONB,
-    last_validated TIMESTAMP,
-    
-    -- Audit Fields
-    created_by VARCHAR(100),
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    source_system VARCHAR(50)
-);
+-- Business Key
+primary_key  VARCHAR(50) UNIQUE NOT NULL
+
+-- Data Quality
+dq_score INTEGER DEFAULT 100
+dq_issues JSONB
+last_validated TIMESTAMP
+
+-- Audit Trail
+created_by VARCHAR(100) DEFAULT 'system'
+created_at TIMESTAMP DEFAULT NOW()
+updated_by VARCHAR(100)
+updated_at TIMESTAMP DEFAULT NOW()
+
+-- Source Tracking
+source_system VARCHAR(50)
+source_id VARCHAR(100)
+source_timestamp TIMESTAMP
 ```
 
-## 🔧 Configuration
+### Connecting to PostgreSQL
 
-### Talend Job Configuration
-
-#### 1. Database Connections
-Configure in Talend `tPostgreSQLConnection` components:
-- **Host**: `localhost`
-- **Port**: `5432`
-- **Database**: `mdm_hub`
-- **Username**: `mdm_user`
-- **Password**: `mdm_password`
-
-#### 2. Data Quality Rules
-Each MDM job includes:
-- **Format Validation** (email, phone, SIRET)
-- **Completeness Checks** (required fields)
-- **Uniqueness Validation** (business keys)
-- **Cross-reference Checks** (valid foreign keys)
-
-### OpenMetadata Setup
-
-#### 1. Business Glossary
-Create terms in OpenMetadata UI:
-- **Client Fidèle**: Client with >10 orders/year
-- **Produit Actif**: Product with regular stock movements
-- **Fournisseur Certifié**: Validated and approved supplier
-
-#### 2. Data Classification
-- **PII**: `email`, `telephone`, `adresse`
-- **Business Critical**: `client_code`, `siret`, `sku`
-- **Reference Data**: `segment_client`, `categorie_produit`
-
-### Scheduling Configuration
-
-#### Cron Jobs
 ```bash
-# Daily MDM processing at 2 AM
-0 2 * * * /opt/logistics-mdm/scripts/run_mdm_pipeline.sh
+# From your terminal
+psql -h localhost -U mdm_user -d mdm_hub
 
-# Weekly data quality assessment (Sunday at 3 AM)
-0 3 * * 0 /opt/logistics-mdm/scripts/run_dq_assessment.sh
-
-# Monthly governance reporting (1st of month at 4 AM)
-0 4 1 * * /opt/logistics-mdm/scripts/generate_governance_reports.sh
+# Example queries
+SELECT COUNT(*) FROM mdm.clients;
+SELECT * FROM mdm.locations LIMIT 5;
 ```
 
-## 📈 Data Quality Framework
+## 🛠️ Configuration & Customization
 
-### Quality Dimensions Monitored
+### Modifying ETL Pipeline
 
-| Dimension | Metrics | Threshold |
-|-----------|---------|-----------|
-| **Completeness** | Required fields populated | > 95% |
-| **Validity** | Data format compliance | > 98% |
-| **Uniqueness** | No duplicate golden records | 100% |
-| **Consistency** | Cross-domain referential integrity | > 99% |
-| **Timeliness** | Data freshness < 24h | > 90% |
+#### Add a New Domain
+1. Create generator function in `plugins/mdm_data_generator.py`
+2. Define transformer in `plugins/mdm_etl.py`
+3. Add table to `database/init-scripts/01-mdm-schema.sql`
+4. Update `DOMAINS` dictionary in `dags/mdm_master_data_etl.py`
+5. Add DAG tasks for generate → transform → load → verify
 
-### Quality Dashboard
-```sql
--- Data Quality Summary View
-CREATE VIEW dq_summary AS
-SELECT 
-    'clients' as domain,
-    COUNT(*) as total_records,
-    AVG(dq_score) as avg_quality,
-    COUNT(CASE WHEN dq_score < 80 THEN 1 END) as poor_quality_count
-FROM mdm_clients
-UNION ALL
-SELECT 'fournisseurs', COUNT(*), AVG(dq_score), 
-       COUNT(CASE WHEN dq_score < 80 THEN 1 END) 
-FROM mdm_fournisseurs;
+#### Change Data Generation Volume
+Edit `dags/mdm_master_data_etl.py`:
+```python
+# Increase or decrease record counts
+generate_locations(150)  # Change to desired count
+generate_clients(140)    # Change to desired count
 ```
 
-## 🔍 Data Governance
-
-### Roles & Responsibilities
-
-| Role | Responsibilities | Tools Access |
-|------|------------------|--------------|
-| **Data Steward** | Data quality monitoring, Issue resolution | OpenMetadata, Talend |
-| **Data Owner** | Domain governance, Policy approval | OpenMetadata |
-| **Data Consumer** | Data usage, Requirement definition | PostgreSQL, Reports |
-| **MDM Admin** | System maintenance, User management | All tools |
-
-### Governance Processes
-
-#### 1. Data Issue Management
-```mermaid
-graph LR
-    A[Issue Detected] --> B[OpenMetadata Ticket]
-    B --> C[Steward Assignment]
-    C --> D[Root Cause Analysis]
-    D --> E[Talend Job Fix]
-    E --> F[Quality Validation]
-    F --> G[Issue Resolution]
+#### Modify Transformation Rules
+Edit transformer functions in `plugins/mdm_etl.py`:
+```python
+def transform_clients(record):
+    record["Client_Name"] = normalize_title(record.get("Client_Name"))
+    # Add custom validation or formatting here
+    return record
 ```
 
-#### 2. Change Management
-- **Standard Changes**: Data quality rule updates
-- **Normal Changes**: New master data domains
-- **Major Changes**: Schema modifications, Tool upgrades
+### Scheduling
 
-## 🛠️ Operations & Maintenance
+Default schedule is **@daily** (2 AM UTC). To modify:
 
-### Daily Operations
+1. Via Airflow UI:
+   - Go to **DAGs** → **mdm_master_data_etl**
+   - Edit schedule in DAG details
+
+2. Via Code (`dags/mdm_master_data_etl.py`):
+   ```python
+   @dag(
+       dag_id="mdm_master_data_etl",
+       schedule="0 2 * * *",  # 2 AM daily
+       # or use: "@weekly", "@monthly", etc.
+   )
+   ```
+
+## 🐛 Troubleshooting
+
+### Services Won't Start
 ```bash
-# Check system status
-./scripts/health_check.sh
+# Check Docker daemon
+docker ps
 
-# Run manual MDM processing
-./scripts/run_mdm_pipeline.sh
+# View detailed logs
+docker-compose logs -f
 
-# Verify data quality
-./scripts/check_data_quality.sh
+# Rebuild images if needed
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
 ```
 
-### Monitoring & Alerts
-
-#### Key Metrics to Monitor
-- **System Health**: Service availability, Disk space
-- **Data Quality**: DQ scores, Validation failures
-- **Processing**: Job success rates, Processing time
-- **Governance**: Policy violations, Unclassified data
-
-#### Alert Configuration
+### PostgreSQL Connection Issues
 ```bash
-# Example alert script
-#!/bin/bash
-DQ_SCORE=$(psql -U mdm_user -d mdm_hub -t -c "SELECT AVG(dq_score) FROM mdm_clients")
+# Verify PostgreSQL is running
+docker-compose ps postgres-mdm
 
-if (( $(echo "$DQ_SCORE < 80" | bc -l) )); then
-    echo "ALERT: Low data quality score: $DQ_SCORE" | mail -s "MDM Quality Alert" admin@company.com
-fi
+# Check logs
+docker-compose logs postgres-mdm
+
+# Test connection
+docker-compose exec postgres-mdm psql -U mdm_user -d mdm_hub -c "SELECT 1"
 ```
 
-### Backup Strategy
+### Airflow DAG Not Running
 ```bash
-# Daily database backup
-0 1 * * * pg_dump -U mdm_user mdm_hub > /backups/mdm_hub_$(date +%Y%m%d).sql
+# Check DAG parsing
+docker-compose exec ingestion airflow dags list
 
-# Weekly full backup (including Talend jobs)
-0 2 * * 0 tar -czf /backups/mdm_full_$(date +%Y%m%d).tar.gz /opt/logistics-mdm
+# View DAG logs
+docker-compose logs ingestion | grep mdm_master_data_etl
+
+# Trigger manually
+docker-compose exec ingestion airflow dags trigger mdm_master_data_etl
 ```
 
-## 🚨 Troubleshooting
-
-### Common Issues
-
-#### 1. Talend Job Failures
-**Symptoms**: Job exits with error code
-**Solution**:
+### OpenMetadata Not Showing Data
 ```bash
-# Check job logs
-tail -f /opt/talend/logs/mdm_clients.log
+# Wait for database initialization (3-5 minutes on first start)
+docker-compose logs openmetadata-server
 
-# Verify database connection
-telnet localhost 5432
-
-# Check disk space
-df -h /opt
+# Manually trigger PostgreSQL ingestion
+# Via UI: Admin → Ingestion → Create Ingestion
 ```
 
-#### 2. OpenMetadata Ingestion Issues
-**Symptoms**: Tables not appearing in catalog
-**Solution**:
-```bash
-# Restart ingestion service
-docker-compose restart openmetadata-ingestion
+## 📦 Dependencies
 
-# Check ingestion logs
-docker-compose logs openmetadata-ingestion
+See `docker-setup/requirements.txt`:
+- **psycopg2-binary**: PostgreSQL adapter
+- **pandas**: Data manipulation
+- **faker**: Test data generation
 
-# Manual ingestion trigger
-curl -X POST http://localhost:8585/api/v1/services/ingestion/trigger -d '{"name":"postgres_ingestion"}'
-```
-
-#### 3. Data Quality Degradation
-**Symptoms**: Decreasing DQ scores
-**Solution**:
-- Check source data changes in ERP/CRM systems
-- Review and update validation rules in Talend
-- Analyze DQ results in PostgreSQL: `SELECT * FROM dq_results ORDER BY executed_at DESC LIMIT 10;`
-
-### Performance Optimization
-
-#### Database Tuning
-```sql
--- Add indexes for frequent queries
-CREATE INDEX idx_clients_code ON mdm_clients(client_code);
-CREATE INDEX idx_produits_sku ON mdm_produits(sku);
-CREATE INDEX idx_fournisseurs_nom ON mdm_fournisseurs(nom);
-
--- Regular maintenance
-VACUUM ANALYZE mdm_clients;
-REINDEX TABLE mdm_clients;
-```
-
-#### Talend Optimization
-- Use tBufferOutput for large datasets
-- Implement incremental processing where possible
-- Configure appropriate JVM memory settings
-
-## 🔄 Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2024-01-15 | Initial release with Clients, Products domains |
-| 1.1.0 | 2024-02-01 | Added Suppliers, Sites, Vehicles domains |
-| 1.2.0 | 2024-03-01 | Enhanced data quality framework |
-| 2.0.0 | 2024-06-01 | Advanced governance features |
-
-## 🤝 Contributing
-
-### Development Process
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/improvement`)
-3. Commit changes (`git commit -am 'Add new feature'`)
-4. Push to branch (`git push origin feature/improvement`)
-5. Create Pull Request
-
-### Code Standards
-- Talend jobs: Use consistent naming conventions
-- SQL scripts: Include comments and documentation
-- Scripts: Add error handling and logging
+Docker images:
+- `openmetadata/server`: Data governance platform
+- `openmetadata/ingestion`: Metadata ingestion pipeline
+- `postgres`: PostgreSQL database
+- `mysql`: OpenMetadata backend
+- `elasticsearch`: Full-text search
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+Licensed under the **Apache License 2.0** - see [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🆘 Support & Contributing
 
-For support and questions:
-- **Technical Issues**: Create GitHub issue
-- **Data Governance**: Contact data governance team
-- **Urgent Problems**: Email mdm-support@company.com
+### Getting Help
+- Check logs: `docker-compose logs -f [service-name]`
+- Review DAG executions in Airflow UI
+- Inspect database directly via psql
+
+### Contributing
+1. Create a feature branch: `git checkout -b feature/my-improvement`
+2. Make changes and test locally
+3. Commit with clear messages: `git commit -m "Add new feature"`
+4. Push and create a Pull Request
+
+## 🎯 Next Steps
+
+- [ ] Deploy services: `./scripts/start-environment.sh`
+- [ ] Access OpenMetadata at http://localhost:8585
+- [ ] Browse generated test data in PostgreSQL
+- [ ] Review ETL pipeline in Airflow UI (http://localhost:8080)
+- [ ] Customize domains for your logistics use cases
+- [ ] Configure production data sources (ERP, CRM, etc.)
+- [ ] Set up data steward teams
 
 ---
 
-**Next Steps**:
-1. ✅ Review architecture and setup
-2. 🚀 Deploy development environment
-3. 🔧 Configure your specific data domains
-4. 👥 Train data stewards and users
-5. 📈 Go live with pilot domain
-
----
-*Last Updated: 2025-10-11 | Version: 1.0.0*
+**Version**: 1.0.0 | **Last Updated**: November 2025
